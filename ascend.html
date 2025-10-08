@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ascend: Master Your Inner World</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111111;
+            --panel-color: #1a1a1a;
+            --text-color: #e5e7eb;
+            --accent-color: #3b82f6; /* Electric Blue */
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --border-color: rgba(59, 130, 246, 0.3);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-teko { font-family: 'Teko', sans-serif; }
+        .accent-text { color: var(--accent-color); }
+        .accent-bg { background-color: var(--accent-color); }
+        .accent-border { border-color: var(--accent-color); }
+        .accent-glow { box-shadow: 0 0 15px var(--accent-glow); }
+        .panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+            height: calc(100vh - 2rem);
+            max-height: 900px;
+            max-width: 1400px;
+            margin: auto;
+        }
+        .header { grid-column: 1 / -1; }
+        .stats-panel { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .main-panel { grid-column: 2 / 3; grid-row: 2 / 3; }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                height: auto;
+            }
+            .stats-panel { grid-column: 1 / -1; grid-row: 2 / 3; }
+            .main-panel { grid-column: 1 / -1; grid-row: 3 / 4; }
+        }
+
+        .task-item { transition: all 0.2s ease; }
+        .task-item:hover { background-color: rgba(255,255,255,0.05); }
+        .btn-dive {
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 10% 100%, 0 75%);
+            transition: all 0.2s ease;
+        }
+        .btn-dive:hover { background-color: #fff; color: #000; }
+        
+        .modal-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0s 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--panel-color); }
+        ::-webkit-scrollbar-thumb { background: var(--accent-color); }
+
+        /* Fix for jittery clock */
+        #current-time {
+            font-variant-numeric: tabular-nums;
+        }
+        /* Animation for quotes */
+        #quote-container {
+            transition: opacity 1s ease-in-out;
+        }
+        /* Clickable skill items */
+        .skill-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .skill-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="p-4 bg-black">
+
+    <div class="main-grid">
+        <!-- Header -->
+        <header class="header panel rounded-lg p-4 grid grid-cols-[180px,1fr,220px] gap-8 items-center">
+            <h1 class="font-teko text-5xl tracking-wider">ASCEND</h1>
+            <div id="quote-container" class="text-center hidden md:block">
+                <p id="quote-text" class="text-gray-400 italic text-sm">"As long as I win in the end... That's all that matters."</p>
+                <p id="quote-author" class="text-gray-600 mt-1 text-xs">- Kiyotaka Ayanokoji</p>
+            </div>
+            <div class="text-right">
+                <div class="flex items-baseline gap-4">
+                    <p id="current-time" class="font-teko text-3xl"></p>
+                    <p id="current-date" class="font-teko text-3xl"></p>
+                </div>
+                <p id="current-day" class="text-lg text-gray-400 -mt-2"></p>
+            </div>
+        </header>
+
+        <!-- Left Panel: Stats -->
+        <aside class="stats-panel panel rounded-lg p-6 flex flex-col overflow-y-auto">
+            <div class="text-center mb-4">
+                <p id="rank-title" class="font-teko text-5xl accent-text">E-RANK</p>
+                <div class="flex justify-between items-center mt-2">
+                    <h2 class="font-teko text-3xl text-gray-400">TOTAL LEVEL</h2>
+                    <p id="total-level" class="font-teko text-5xl">5</p>
+                </div>
+            </div>
+            <h2 class="font-teko text-3xl accent-text mb-4 border-t border-[var(--border-color)] pt-4">LIFE SKILLS</h2>
+            <div id="stats-container" class="space-y-4">
+                <!-- Stats will be injected here -->
+            </div>
+            <div class="mt-6">
+                <h2 class="font-teko text-3xl accent-text mb-4">BREAK BANK</h2>
+                <div id="banked-time-container" class="panel p-4 rounded-md text-center">
+                    <p class="font-teko text-5xl">00:00</p>
+                </div>
+            </div>
+            <div class="mt-auto pt-6">
+                <h2 class="font-teko text-3xl accent-text mb-4">PALACE CONQUEST</h2>
+                 <div id="boss-list" class="space-y-4 pr-2 max-h-48 overflow-y-auto"></div>
+                 <button id="add-boss-btn" class="w-full mt-4 font-teko text-xl accent-bg text-black px-6 py-1 rounded-sm hover:bg-white transition-colors">ADD GOAL</button>
+            </div>
+        </aside>
+
+        <!-- Main Panel: Daily Schedule -->
+        <main class="main-panel panel rounded-lg p-6 flex flex-col">
+            <h2 class="font-teko text-3xl accent-text mb-4">DAILY SCHEDULE</h2>
+            <form id="add-task-form" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input type="text" id="task-name-input" placeholder="Task Name (e.g., Read Chapter 5)" class="md:col-span-2 flex-grow bg-transparent border-b-2 accent-border p-2 focus:outline-none focus:bg-gray-800/50" required>
+                <select id="task-category-input" class="bg-transparent border-b-2 accent-border p-2 focus:outline-none focus:bg-gray-800/50">
+                    <option value="Knowledge">Knowledge</option>
+                    <option value="Discipline">Discipline</option>
+                    <option value="Proficiency">Proficiency</option>
+                    <option value="Insight">Insight</option>
+                    <option value="Focus">Focus</option>
+                </select>
+                <select id="task-timer-type-input" class="bg-transparent border-b-2 accent-border p-2 focus:outline-none focus:bg-gray-800/50">
+                    <option value="Pomodoro">Pomodoro (25 min)</option>
+                    <option value="Practice">Practice Test</option>
+                </select>
+                <button type="submit" class="md:col-span-2 font-teko text-xl accent-bg text-black px-6 py-2 rounded-sm hover:bg-white transition-colors">ADD TASK</button>
+            </form>
+            <div id="task-list" class="flex-grow space-y-2 overflow-y-auto pr-2"></div>
+        </main>
+    </div>
+
+    <!-- Modals below -->
+    <div id="skill-info-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-lg text-center panel p-8 rounded-lg">
+             <h2 id="skill-info-title" class="font-teko text-6xl accent-text">Knowledge</h2>
+             <p id="skill-info-description" class="text-lg my-4 text-left leading-relaxed"></p>
+             <button class="modal-close mt-6 font-teko text-2xl accent-bg text-black px-12 py-2 rounded-sm">CLOSE</button>
+        </div>
+    </div>
+    <div id="add-boss-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-md text-center panel p-8 rounded-lg">
+             <h2 class="font-teko text-6xl accent-text">NEW MAJOR GOAL</h2>
+             <form id="add-boss-form">
+                 <input type="text" id="boss-name-input" placeholder="Goal Name (e.g., Calculus Midterm)" class="w-full mt-4 bg-transparent border-b-2 accent-border p-2 focus:outline-none" required>
+                 <input type="number" id="boss-hp-input" placeholder="Total Study Time (Hours)" class="w-full mt-4 bg-transparent border-b-2 accent-border p-2 focus:outline-none" required>
+                 <select id="boss-category-input" class="w-full mt-4 bg-transparent border-b-2 accent-border p-2 focus:outline-none">
+                    <option value="Knowledge">Knowledge</option>
+                    <option value="Discipline">Discipline</option>
+                    <option value="Proficiency">Proficiency</option>
+                    <option value="Insight">Insight</option>
+                    <option value="Focus">Focus</option>
+                 </select>
+                 <div class="flex justify-center gap-4 mt-6">
+                     <button type="button" class="modal-close font-teko text-2xl border-2 border-gray-600 text-gray-600 px-10 py-2 rounded-sm">CANCEL</button>
+                     <button type="submit" class="font-teko text-2xl accent-bg text-black px-10 py-2 rounded-sm">CREATE</button>
+                 </div>
+             </form>
+        </div>
+    </div>
+    <div id="mind-palace-modal" class="modal-overlay fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="modal-content panel rounded-lg p-8 max-w-2xl w-full text-center accent-glow">
+            <h2 class="font-teko text-4xl text-gray-400">SHADOW ENCOUNTER</h2>
+            <p id="shadow-name" class="font-teko text-6xl accent-text mb-4"></p>
+            <div id="pomodoro-view">
+                <div class="font-teko text-9xl my-6" id="pomodoro-timer">25:00</div>
+                <p class="text-gray-400 mb-2">HP</p>
+                <div class="w-full bg-gray-700 h-4 rounded-full mb-6"><div id="shadow-hp-bar" class="accent-bg h-4 rounded-full transition-all duration-500"></div></div>
+                <div class="flex justify-center gap-4">
+                    <button id="timer-start-btn" class="font-teko text-2xl accent-bg text-black px-10 py-2 rounded-sm">ENGAGE</button>
+                    <button id="timer-pause-btn" class="font-teko text-2xl border-2 accent-border px-10 py-2 rounded-sm">PAUSE</button>
+                    <button id="timer-giveup-btn" class="font-teko text-2xl border-2 border-gray-600 text-gray-600 px-10 py-2 rounded-sm">ESCAPE</button>
+                </div>
+            </div>
+            <div id="practice-view" class="hidden">
+                <div class="font-teko text-9xl my-6" id="problem-timer">00:00</div>
+                 <p id="break-probability-text" class="text-lg text-gray-400 mb-6"></p>
+                <button id="problem-complete-btn" class="font-teko text-3xl accent-bg text-black px-16 py-3 rounded-sm w-full">PROBLEM COMPLETE</button>
+                <button id="practice-end-btn" class="mt-4 font-teko text-2xl border-2 border-gray-600 text-gray-600 px-10 py-2 rounded-sm">END SESSION</button>
+            </div>
+        </div>
+    </div>
+    <div id="victory-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-md text-center">
+            <h2 class="font-teko text-9xl accent-text animate-pulse">VICTORY</h2>
+            <div id="victory-rewards" class="bg-black/50 p-6 mt-4 rounded"></div>
+            <button class="modal-close mt-6 font-teko text-2xl accent-bg text-black px-12 py-2 rounded-sm">RETURN</button>
+        </div>
+    </div>
+    <div id="break-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-md text-center panel p-8 rounded-lg">
+             <h2 class="font-teko text-6xl accent-text">BREAK EARNED</h2>
+             <p id="break-time-text" class="text-2xl my-4"></p>
+             <div class="flex justify-center gap-4">
+                <button id="use-break-btn" class="font-teko text-2xl accent-bg text-black px-10 py-2 rounded-sm">USE NOW</button>
+                <button id="bank-break-btn" class="font-teko text-2xl border-2 accent-border px-10 py-2 rounded-sm">BANK IT</button>
+             </div>
+        </div>
+    </div>
+     <div id="difficulty-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-md text-center panel p-8 rounded-lg">
+             <h2 class="font-teko text-6xl accent-text">RATE DIFFICULTY</h2>
+             <p class="text-xl my-4">How difficult was that problem?</p>
+             <div class="flex justify-center gap-4">
+                <button data-difficulty="Easy" class="difficulty-btn font-teko text-2xl border-2 border-green-500 text-green-500 px-10 py-2 rounded-sm">EASY</button>
+                <button data-difficulty="Medium" class="difficulty-btn font-teko text-2xl border-2 border-yellow-500 text-yellow-500 px-10 py-2 rounded-sm">MEDIUM</button>
+                <button data-difficulty="Hard" class="difficulty-btn font-teko text-2xl border-2 border-red-500 text-red-500 px-10 py-2 rounded-sm">HARD</button>
+             </div>
+        </div>
+    </div>
+    <div id="break-timer-modal" class="modal-overlay fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div class="modal-content w-full max-w-md text-center panel p-8 rounded-lg">
+             <h2 class="font-teko text-6xl accent-text">ON BREAK</h2>
+             <div id="break-countdown-timer" class="font-teko text-9xl my-6">00:00</div>
+             <p class="text-xl">Time to recharge.</p>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const elements = {
+            date: document.getElementById('current-date'),
+            time: document.getElementById('current-time'),
+            day: document.getElementById('current-day'),
+            rankTitle: document.getElementById('rank-title'),
+            totalLevel: document.getElementById('total-level'),
+            statsContainer: document.getElementById('stats-container'),
+            bossList: document.getElementById('boss-list'),
+            addBossBtn: document.getElementById('add-boss-btn'),
+            bankedTimeContainer: document.getElementById('banked-time-container'),
+            addTaskForm: document.getElementById('add-task-form'),
+            taskNameInput: document.getElementById('task-name-input'),
+            taskCategoryInput: document.getElementById('task-category-input'),
+            taskTimerTypeInput: document.getElementById('task-timer-type-input'),
+            taskList: document.getElementById('task-list'),
+            quoteContainer: document.getElementById('quote-container'),
+            mindPalaceModal: document.getElementById('mind-palace-modal'),
+            shadowName: document.getElementById('shadow-name'),
+            pomodoroView: document.getElementById('pomodoro-view'),
+            pomodoroTimer: document.getElementById('pomodoro-timer'),
+            shadowHpBar: document.getElementById('shadow-hp-bar'),
+            timerStartBtn: document.getElementById('timer-start-btn'),
+            timerPauseBtn: document.getElementById('timer-pause-btn'),
+            timerGiveupBtn: document.getElementById('timer-giveup-btn'),
+            practiceView: document.getElementById('practice-view'),
+            problemTimer: document.getElementById('problem-timer'),
+            breakProbabilityText: document.getElementById('break-probability-text'),
+            problemCompleteBtn: document.getElementById('problem-complete-btn'),
+            practiceEndBtn: document.getElementById('practice-end-btn'),
+            addBossModal: document.getElementById('add-boss-modal'),
+            addBossForm: document.getElementById('add-boss-form'),
+            bossNameInput: document.getElementById('boss-name-input'),
+            bossHpInput: document.getElementById('boss-hp-input'),
+            bossCategoryInput: document.getElementById('boss-category-input'),
+            victoryModal: document.getElementById('victory-modal'),
+            victoryRewards: document.getElementById('victory-rewards'),
+            breakModal: document.getElementById('break-modal'),
+            breakTimeText: document.getElementById('break-time-text'),
+            useBreakBtn: document.getElementById('use-break-btn'),
+            bankBreakBtn: document.getElementById('bank-break-btn'),
+            difficultyModal: document.getElementById('difficulty-modal'),
+            breakTimerModal: document.getElementById('break-timer-modal'),
+            breakCountdownTimer: document.getElementById('break-countdown-timer'),
+            skillInfoModal: document.getElementById('skill-info-modal'),
+        };
+
+        let state = {
+            stats: { Knowledge: { level: 1, exp: 0, expToNext: 100 }, Discipline: { level: 1, exp: 0, expToNext: 100 }, Proficiency: { level: 1, exp: 0, expToNext: 100 }, Insight: { level: 1, exp: 0, expToNext: 100 }, Focus: { level: 1, exp: 0, expToNext: 100 } },
+            tasks: [],
+            bosses: [],
+            bankedBreakTime: 0,
+            activeTask: null,
+            practiceSession: { probability: 0.1, problemStartTime: 0, timeTaken: 0, timerInterval: null, earnedBreak: 0 }
+        };
+
+        const quotes = [
+            { text: "If you win, you live. If you lose, you die. If you don't fight, you can't win!", author: "Eren Yeager, Attack on Titan" },
+            { text: "As long as I win in the end... That's all that matters.", author: "Kiyotaka Ayanokoji, COTE" },
+            { text: "People have to save themselves. One person saving another is impossible.", author: "Meme Oshino, Monogatari" },
+            { text: "If you don't have the conviction to walk the path, you will be devoured by the countless temptations and challenges that await you.", author: "Sung Jinwoo, Solo Leveling" },
+            { text: "We're not meat. We're humans.", author: "Emma, The Promised Neverland" },
+            { text: "A person who cannot sacrifice everything, cannot change anything.", author: "Armin Arlert, Attack on Titan" }
+        ];
+
+        const SKILL_DESCRIPTIONS = {
+            Knowledge: "<strong>Primary Goal:</strong> Absorb new information and facts.<br><br>Use this for tasks like reading textbooks, watching lectures, researching topics, or memorizing flashcards.",
+            Discipline: "<strong>Primary Goal:</strong> Build mental toughness and overcome resistance.<br><br>Use this for tasks you've been procrastinating on, studying subjects you dislike, reviewing past failures, or forcing yourself to work when unmotivated.",
+            Proficiency: "<strong>Primary Goal:</strong> Hone a practical skill through active repetition.<br><br>Use this for solving practice problems, completing coding exercises, practicing an instrument, or physical training like calisthenics.",
+            Insight: "<strong>Primary Goal:</strong> Connect ideas and generate true understanding.<br><br>Use this for tasks like writing summaries in your own words, creating mind maps, or trying to teach a concept to someone else (even an imaginary person).",
+            Focus: "<strong>Primary Goal:</strong> Develop sustained, deep concentration.<br><br>Use this for long, uninterrupted work blocks on a single subject. Pomodoro sessions automatically train this skill, as does any activity where you actively resist distractions."
+        };
+
+        const DIFFICULTY_MODS = { Easy: { prob: 0.05, time: 1 }, Medium: { prob: 0.07, time: 1.5 }, Hard: { prob: 0.1, time: 2.5 } };
+        const BASE_BREAK_PROBABILITY = 0.1;
+
+        let pomodoroInterval;
+        let pomodoroTotalSeconds = 25 * 60;
+        let pomodoroSecondsRemaining = pomodoroTotalSeconds;
+        let isPomodoroPaused = true;
+        
+        const saveState = () => localStorage.setItem('ascendAppState_v6', JSON.stringify(state));
+        const loadState = () => {
+            const saved = localStorage.getItem('ascendAppState_v6');
+            if (saved) {
+                const loadedState = JSON.parse(saved);
+                if (!loadedState.stats.Focus) {
+                    loadedState.stats.Focus = { level: 1, exp: 0, expToNext: 100 };
+                    delete loadedState.stats.Collaboration;
+                }
+                state = loadedState;
+            }
+            renderAll();
+        };
+
+        const addExp = (stat, amount) => { if (!state.stats[stat]) return false; const s = state.stats[stat]; s.exp += amount; let leveledUp = false; while (s.exp >= s.expToNext) { s.level++; s.exp -= s.expToNext; s.expToNext = Math.floor(s.expToNext * 1.5); leveledUp = true; } return leveledUp; };
+        const damageBoss = (category, amountInSeconds) => { state.bosses.forEach(boss => { if (boss.category === category) { boss.hp -= amountInSeconds; if (boss.hp < 0) boss.hp = 0; } }); };
+        const formatTime = (totalSeconds) => { const minutes = String(Math.floor(Math.abs(totalSeconds) / 60)).padStart(2, '0'); const seconds = String(Math.abs(totalSeconds) % 60).padStart(2, '0'); return `${minutes}:${seconds}`; };
+
+        const renderAll = () => { renderTime(); renderStats(); renderTotalLevel(); renderTasks(); renderBosses(); renderBankedTime(); };
+        const renderTime = () => { const now = new Date(); elements.date.textContent = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }); elements.day.textContent = now.toLocaleDateString('en-US', { weekday: 'long' }); elements.time.textContent = now.toLocaleTimeString('en-US'); };
+        
+        const renderQuote = () => { const quote = quotes[Math.floor(Math.random() * quotes.length)]; elements.quoteContainer.querySelector('#quote-text').textContent = `"${quote.text}"`; elements.quoteContainer.querySelector('#quote-author').textContent = `- ${quote.author}`; };
+        const updateQuote = () => { elements.quoteContainer.style.opacity = '0'; setTimeout(() => { renderQuote(); elements.quoteContainer.style.opacity = '1'; }, 1000); };
+
+        const renderTotalLevel = () => { const total = Object.values(state.stats).reduce((sum, skill) => sum + skill.level, 0); elements.totalLevel.textContent = total; renderRank(total); };
+        const renderRank = (totalLevel) => { let rank = "E-RANK"; if (totalLevel >= 50) rank = "S-RANK"; else if (totalLevel >= 40) rank = "A-RANK"; else if (totalLevel >= 30) rank = "B-RANK"; else if (totalLevel >= 20) rank = "C-RANK"; else if (totalLevel >= 10) rank = "D-RANK"; elements.rankTitle.textContent = rank; };
+        const renderStats = () => { elements.statsContainer.innerHTML = ''; for (const key in state.stats) { const s = state.stats[key]; const percentage = (s.exp / s.expToNext) * 100; elements.statsContainer.innerHTML += `<div class="skill-item p-2 -m-2" data-skill="${key}"><div class="flex justify-between items-baseline mb-1"><h3 class="font-semibold text-lg">${key}</h3><p class="text-sm">LV ${s.level}</p></div><div class="w-full bg-gray-700 h-2 rounded-full"><div class="accent-bg h-2 rounded-full" style="width: ${percentage}%"></div></div></div>`; } };
+        const renderTasks = () => { elements.taskList.innerHTML = ''; state.tasks.forEach((task, index) => { const div = document.createElement('div'); div.className = 'task-item panel p-3 flex justify-between items-center'; div.innerHTML = `<div><p class="text-lg font-bold">${task.name}</p><p class="text-sm accent-text">${task.category} - ${task.timerType}</p></div><button data-index="${index}" class="dive-btn font-teko text-xl accent-border border-2 px-8 py-1 btn-dive">DIVE IN</button>`; elements.taskList.appendChild(div); }); };
+        const renderBosses = () => { elements.bossList.innerHTML = state.bosses.length ? '' : '<p class="text-gray-500 text-center">No major goals set.</p>'; state.bosses.forEach((boss, index) => { const percentage = (boss.hp / boss.maxHp) * 100; elements.bossList.innerHTML += `<div class="p-2 rounded bg-black/20"><p class="text-md font-bold flex justify-between">${boss.name} <span class="text-gray-400">${boss.category}</span></p><div class="w-full bg-red-900 h-3 rounded-full my-1 border border-red-500/50"><div class="bg-red-500 h-full rounded-full" style="width: ${percentage}%"></div></div><p class="text-right text-xs">${formatTime(boss.hp)} / ${formatTime(boss.maxHp)} left</p></div>`; }); };
+        const renderBankedTime = () => { elements.bankedTimeContainer.innerHTML = `<p class="font-teko text-5xl">${formatTime(state.bankedBreakTime)}</p>`; };
+
+        elements.addTaskForm.addEventListener('submit', (e) => { e.preventDefault(); state.tasks.push({ name: elements.taskNameInput.value, category: elements.taskCategoryInput.value, timerType: elements.taskTimerTypeInput.value }); elements.taskNameInput.value = ''; saveState(); renderTasks(); });
+        elements.taskList.addEventListener('click', (e) => { if (e.target.classList.contains('dive-btn')) { const index = parseInt(e.target.dataset.index); state.activeTask = { ...state.tasks[index], originalIndex: index }; startMindPalace(); } });
+        elements.addBossBtn.addEventListener('click', () => elements.addBossModal.classList.add('active'));
+        elements.addBossForm.addEventListener('submit', (e) => { e.preventDefault(); state.bosses.push({ name: elements.bossNameInput.value, hp: parseFloat(elements.bossHpInput.value) * 3600, maxHp: parseFloat(elements.bossHpInput.value) * 3600, category: elements.bossCategoryInput.value }); elements.addBossForm.reset(); elements.addBossModal.classList.remove('active'); saveState(); renderBosses(); });
+        document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', () => { btn.closest('.modal-overlay').classList.remove('active'); }));
+        elements.statsContainer.addEventListener('click', (e) => { const skillItem = e.target.closest('.skill-item'); if (skillItem) { const skillName = skillItem.dataset.skill; elements.skillInfoModal.querySelector('#skill-info-title').textContent = skillName; elements.skillInfoModal.querySelector('#skill-info-description').innerHTML = SKILL_DESCRIPTIONS[skillName]; elements.skillInfoModal.classList.add('active'); } });
+
+        const startMindPalace = () => { elements.shadowName.textContent = state.activeTask.name; if (state.activeTask.timerType === 'Pomodoro') { elements.pomodoroView.classList.remove('hidden'); elements.practiceView.classList.add('hidden'); resetPomodoroTimer(); } else { elements.practiceView.classList.remove('hidden'); elements.pomodoroView.classList.add('hidden'); startPracticeSession(); } elements.mindPalaceModal.classList.add('active'); };
+        const updatePomodoroDisplay = () => { elements.pomodoroTimer.textContent = formatTime(pomodoroSecondsRemaining); elements.shadowHpBar.style.width = `${(pomodoroSecondsRemaining / pomodoroTotalSeconds) * 100}%`; };
+        const resetPomodoroTimer = () => { isPomodoroPaused = true; clearInterval(pomodoroInterval); pomodoroSecondsRemaining = pomodoroTotalSeconds; updatePomodoroDisplay(); };
+        elements.timerStartBtn.addEventListener('click', () => { if (isPomodoroPaused) { isPomodoroPaused = false; pomodoroInterval = setInterval(() => { pomodoroSecondsRemaining--; updatePomodoroDisplay(); if (pomodoroSecondsRemaining <= 0) { clearInterval(pomodoroInterval); pomodoroVictory(); } }, 1000); } });
+        elements.timerPauseBtn.addEventListener('click', () => { isPomodoroPaused = true; clearInterval(pomodoroInterval); });
+        elements.timerGiveupBtn.addEventListener('click', () => { elements.mindPalaceModal.classList.remove('active'); resetPomodoroTimer(); });
+        const pomodoroVictory = () => { const task = state.activeTask; const expGained = 50; const leveledUp = addExp(task.category, expGained); addExp('Focus', 25); damageBoss(task.category, pomodoroTotalSeconds); state.tasks.splice(task.originalIndex, 1); elements.victoryRewards.innerHTML = `<p class="text-xl font-bold">${task.name} Defeated!</p><p class="text-lg accent-text mt-2">+${expGained} EXP for ${task.category}</p>${leveledUp ? `<p class="text-lg text-green-400 font-bold">${task.category} Level Up!</p>` : ''}<p class="text-lg text-red-400 mt-2">-${formatTime(pomodoroTotalSeconds)} progress on ${task.category} goals</p>`; elements.mindPalaceModal.classList.remove('active'); elements.victoryModal.classList.add('active'); saveState(); };
+
+        const startPracticeSession = () => { state.practiceSession.probability = BASE_BREAK_PROBABILITY; elements.breakProbabilityText.textContent = `Break Probability: ${Math.round(state.practiceSession.probability * 100)}%`; startProblemTimer(); };
+        const startProblemTimer = () => { let problemSeconds = 0; state.practiceSession.problemStartTime = Date.now(); elements.problemTimer.textContent = formatTime(problemSeconds); state.practiceSession.timerInterval = setInterval(() => { problemSeconds++; elements.problemTimer.textContent = formatTime(problemSeconds); }, 1000); };
+        elements.problemCompleteBtn.addEventListener('click', () => { clearInterval(state.practiceSession.timerInterval); state.practiceSession.timeTaken = Math.round((Date.now() - state.practiceSession.problemStartTime) / 1000); elements.difficultyModal.classList.add('active'); });
+        document.querySelectorAll('.difficulty-btn').forEach(btn => btn.addEventListener('click', (e) => { const difficulty = e.target.dataset.difficulty; elements.difficultyModal.classList.remove('active'); const timeMod = Math.max(0.1, 1 - (state.practiceSession.timeTaken / 300)); const difficultyMod = DIFFICULTY_MODS[difficulty].prob; state.practiceSession.probability += (timeMod * 0.05) + difficultyMod; if (Math.random() < state.practiceSession.probability) { const timeRewardMod = Math.max(0.5, 300 / Math.max(60, state.practiceSession.timeTaken)); const breakEarned = Math.round(60 * DIFFICULTY_MODS[difficulty].time * timeRewardMod); state.practiceSession.earnedBreak = breakEarned; elements.breakTimeText.textContent = `${breakEarned} seconds`; elements.breakModal.classList.add('active'); state.practiceSession.probability = BASE_BREAK_PROBABILITY; } else { startProblemTimer(); } elements.breakProbabilityText.textContent = `Break Probability: ${Math.min(100, Math.round(state.practiceSession.probability * 100))}%`; addExp(state.activeTask.category, 10 * DIFFICULTY_MODS[difficulty].time); damageBoss(state.activeTask.category, state.practiceSession.timeTaken); saveState(); renderAll(); }));
+        elements.useBreakBtn.addEventListener('click', () => { const totalBreakTime = state.practiceSession.earnedBreak + state.bankedBreakTime; state.practiceSession.earnedBreak = 0; state.bankedBreakTime = 0; elements.breakModal.classList.remove('active'); elements.breakTimerModal.classList.add('active'); let breakSecondsLeft = totalBreakTime; elements.breakCountdownTimer.textContent = formatTime(breakSecondsLeft); const breakInterval = setInterval(() => { breakSecondsLeft--; elements.breakCountdownTimer.textContent = formatTime(breakSecondsLeft); if (breakSecondsLeft <= 0) { clearInterval(breakInterval); elements.breakTimerModal.classList.remove('active'); startProblemTimer(); } }, 1000); saveState(); renderBankedTime(); });
+        elements.bankBreakBtn.addEventListener('click', () => { state.bankedBreakTime += state.practiceSession.earnedBreak; state.practiceSession.earnedBreak = 0; elements.breakModal.classList.remove('active'); saveState(); renderBankedTime(); startProblemTimer(); });
+        elements.practiceEndBtn.addEventListener('click', () => { clearInterval(state.practiceSession.timerInterval); elements.mindPalaceModal.classList.remove('active'); addExp('Focus', 50); state.tasks.splice(state.activeTask.originalIndex, 1); saveState(); renderTasks(); });
+        
+        loadState();
+        setInterval(renderTime, 1000);
+        updateQuote();
+        setInterval(updateQuote, 60000);
+    });
+    </script>
+</body>
+</html>
+
+
